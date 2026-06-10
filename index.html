@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MCS - Mafia City Simulator</title>
+    <style>
+        /* BASE : Optimisé pour charger vite sur petit réseau */
+        body {
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* FORCE LE MODE HORIZONTAL ET LE SCROLL SI BESOIN */
+        @media screen and (orientation: portrait) {
+            .rotate-msg { display: flex; }
+            .game-wrapper { display: none; }
+        }
+
+        .rotate-msg {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #111;
+            z-index: 999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        /* LE CONTENEUR DU JEU - PLUS PETIT POUR NE PAS ÊTRE COUPÉ */
+        .game-wrapper {
+            width: 95vw;
+            height: 90vh;
+            max-width: 600px;
+            max-height: 280px; /* Taille réduite pour itel/Tecno */
+            background: #1a1a1a;
+            border: 2px solid #ffcc00;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+            margin-bottom: 8px;
+        }
+
+        h1 { color: #ffcc00; font-size: 18px; margin: 0; text-transform: uppercase; }
+        
+        .main-content {
+            display: flex;
+            flex-direction: row;
+            gap: 15px;
+            flex-grow: 1;
+        }
+
+        .info-box { flex: 1; font-size: 11px; color: #ccc; }
+
+        /* FORMULAIRE RESSERRÉ */
+        .login-box {
+            flex: 1.2;
+            background: #222;
+            padding: 8px;
+            border-radius: 5px;
+        }
+
+        .input-row { margin-bottom: 6px; }
+        label { display: block; font-size: 10px; color: #ffcc00; margin-bottom: 2px; }
+        input { width: 100%; padding: 5px; background: #333; border: 1px solid #444; color: #fff; font-size: 12px; border-radius: 3px; box-sizing: border-box; }
+
+        .btn-group { display: flex; gap: 5px; margin-top: 8px; }
+        .btn { flex: 1; padding: 7px; font-size: 11px; font-weight: bold; border: none; border-radius: 3px; cursor: pointer; }
+        .btn-main { background: #ffcc00; color: #000; }
+        .btn-alt { background: transparent; color: #ffcc00; border: 1px solid #ffcc00; }
+
+        /* FOOTER : TOUJOURS VISIBLE */
+        .footer {
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10px;
+            padding-top: 5px;
+        }
+
+        .footer a { color: #666; text-decoration: none; }
+        .btn-admin { background: none; border: none; color: #333; cursor: pointer; font-size: 10px; }
+
+        /* ÉCRAN DE CHARGEMENT DU JEU (Caché au début) */
+        #game-screen {
+            display: none;
+            text-align: center;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+
+        .loading-bar {
+            width: 80%; height: 10px; background: #333; border-radius: 5px; margin-top: 15px; overflow: hidden;
+        }
+        .loading-progress {
+            width: 0%; height: 100%; background: #ffcc00; transition: 3s;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="rotate-msg">
+        <p>🔄 Tourne ton téléphone à l'horizontal pour jouer !</p>
+    </div>
+
+    <div class="game-wrapper">
+        
+        <div id="login-ui" style="height: 100%; display: flex; flex-direction: column;">
+            <div class="header">
+                <h1>Mafia City Simulator</h1>
+                <span style="font-size: 9px; color: #666;">v1.0 - Bénin</span>
+            </div>
+
+            <div class="main-content">
+                <div class="info-box">
+                    <p>Bienvenue Boss. Connecte-toi pour gérer ton empire, acheter tes voitures et recruter tes alliés par MoMo.</p>
+                    <p style="color:#ffcc00">● 100% Compatible itel/Tecno</p>
+                </div>
+
+                <div class="login-box">
+                    <form onsubmit="lancerChargement(event)">
+                        <div class="input-row">
+                            <label>Utilisateur :</label>
+                            <input type="text" id="user" required placeholder="Pseudo">
+                        </div>
+                        <div class="input-row">
+                            <label>Mot de passe :</label>
+                            <input type="password" id="pass" required placeholder="****">
+                        </div>
+                        <div class="btn-group">
+                            <button type="submit" class="btn btn-main">CONNEXION</button>
+                            <button type="button" class="btn btn-alt" onclick="alert('Inscription bientôt disponible !')">REJOINDRE</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="footer">
+                <a href="javascript:void(0)" onclick="alert('Politique MCS :\nTes données sont cryptées et tes paiements MoMo sont sécurisés.')">Politique de confidentialité</a>
+                <button class="btn-admin" onclick="accesAdmin()">[ Admin ]</button>
+            </div>
+        </div>
+
+        <div id="game-screen">
+            <h2 style="color: #ffcc00; margin: 0;">CHARGEMENT DE LA VILLE...</h2>
+            <p id="status" style="font-size: 12px;">Connexion au serveur béninois...</p>
+            <div class="loading-bar">
+                <div id="progress" class="loading-progress"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function lancerChargement(event) {
+            event.preventDefault();
+            // On cache l'écran de connexion
+            document.getElementById('login-ui').style.display = 'none';
+            // On affiche l'écran de chargement
+            document.getElementById('game-screen').style.display = 'flex';
+            
+            // Animation de la barre de chargement
+            setTimeout(() => {
+                document.getElementById('progress').style.width = '100%';
+            }, 100);
+
+            setTimeout(() => {
+                document.getElementById('status').innerText = 'Bienvenue en ville, Boss !';
+                alert("Préparation de ton garage et de tes missions...");
+            }, 3500);
+        }
+
+        function accesAdmin() {
+            let code = prompt("Code Secret Créateur :");
+            if(code === "229MAFIA") {
+                alert("Accès Chef validé ! Toutes les options sont gratuites.");
+            } else {
+                alert("Code Incorrect.");
+            }
+        }
+    </script>
+
+</body>
+</html>
