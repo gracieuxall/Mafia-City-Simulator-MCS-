@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MCS - Mafia City Simulator</title>
+    <style>
+        body {
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        @media screen and (orientation: portrait) {
+            .rotate-msg { display: flex; }
+            .game-wrapper { display: none; }
+        }
+
+        .rotate-msg {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #111;
+            z-index: 999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        /* TAILLE COMPACTE POUR ÉCRANS MOBILES PAYSAGE */
+        .game-wrapper {
+            width: 95vw;
+            height: 92vh;
+            max-width: 620px;
+            max-height: 290px;
+            background: #141414;
+            border: 2px solid #ffcc00;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            padding: 8px;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+            padding-bottom: 3px;
+            margin-bottom: 5px;
+        }
+
+        h1 { color: #ffcc00; font-size: 16px; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .main-content { display: flex; flex-direction: row; gap: 10px; flex-grow: 1; overflow: hidden; }
+
+        /* ÉCRAN 1 : CONNEXION */
+        .login-box { flex: 1.2; background: #222; padding: 8px; border-radius: 5px; }
+        .input-row { margin-bottom: 5px; }
+        label { display: block; font-size: 10px; color: #ffcc00; margin-bottom: 1px; }
+        input { width: 100%; padding: 4px; background: #333; border: 1px solid #444; color: #fff; font-size: 11px; border-radius: 3px; box-sizing: border-box; }
+        .btn-group { display: flex; gap: 5px; margin-top: 5px; }
+        .btn { flex: 1; padding: 6px; font-size: 10px; font-weight: bold; border: none; border-radius: 3px; cursor: pointer; text-transform: uppercase; }
+        .btn-main { background: #ffcc00; color: #000; }
+        .btn-alt { background: transparent; color: #ffcc00; border: 1px solid #ffcc00; }
+
+        /* ÉCRAN 2 : CHARGEMENT */
+        #game-screen { display: none; text-align: center; flex-direction: column; justify-content: center; align-items: center; height: 100%; width: 100%; }
+        .loading-bar { width: 70%; height: 8px; background: #333; border-radius: 4px; margin-top: 10px; overflow: hidden; }
+        .loading-progress { width: 0%; height: 100%; background: #ffcc00; transition: 2.5s linear; }
+
+        /* ÉCRAN 3 : LE MENU PRINCIPAL DU JEU */
+        #main-menu { display: none; flex-direction: column; width: 100%; height: 100%; overflow: hidden; }
+        
+        /* BARRE DES STATS (HAUT) */
+        .stats-bar { display: flex; justify-content: space-around; background: #222; padding: 4px; border-radius: 4px; font-size: 9px; color: #ffcc00; margin-bottom: 5px; border: 1px solid #333; }
+
+        /* GRILLE DU JEU RE-ORGANISÉE */
+        .game-grid { display: flex; flex-direction: row; gap: 8px; flex-grow: 1; overflow: hidden; }
+        .panel { flex: 1; background: #1a1a1a; border: 1px solid #333; border-radius: 4px; padding: 5px; display: flex; flex-direction: column; overflow-y: auto; }
+        .panel-title { font-size: 10px; color: #ffcc00; font-weight: bold; border-bottom: 1px solid #333; padding-bottom: 2px; margin-bottom: 4px; text-transform: uppercase; }
+        
+        /* STYLE DU CHAT */
+        .chat-box { flex-grow: 1; background: #000; border-radius: 3px; padding: 3px; font-size: 9px; overflow-y: auto; margin-bottom: 3px; max-height: 65px; }
+        .chat-msg { margin-bottom: 2px; line-height: 1.2; }
+        .chat-input-zone { display: flex; gap: 2px; }
+        .chat-input { flex: 1; font-size: 9px; padding: 3px; background: #222; border: 1px solid #444; color: #fff; }
+
+        /* BOUTONS PETITS POUR LES ACTIONS */
+        .action-btn { background: #333; color: #fff; border: 1px solid #555; padding: 4px; font-size: 9px; border-radius: 3px; cursor: pointer; margin-bottom: 3px; width: 100%; text-align: left; }
+        .action-btn:hover { background: #ffcc00; color: #000; }
+
+        .footer { margin-top: auto; display: flex; justify-content: space-between; align-items: center; font-size: 9px; padding-top: 3px; border-top: 1px solid #222; }
+        .footer a { color: #555; text-decoration: none; }
+        .btn-admin { background: none; border: none; color: #222; cursor: pointer; font-size: 9px; }
+    </style>
+</head>
+<body>
+
+    <div class="rotate-msg">
+        <p>🔄 Tourne ton téléphone à l'horizontal pour jouer !</p>
+    </div>
+
+    <div class="game-wrapper">
+        
+        <div id="login-ui" style="height: 100%; display: flex; flex-direction: column;">
+            <div class="header">
+                <h1>Mafia City Simulator</h1>
+                <span style="font-size: 9px; color: #666;">v1.0 - Bénin</span>
+            </div>
+            <div class="main-content">
+                <div class="info-box" style="flex: 1; font-size: 10px; color: #ccc;">
+                    <p style="margin:0 0 5px 0;">Bienvenue Boss. Connecte-toi pour gérer ton empire, acheter tes véhicules et lancer tes missions.</p>
+                    <p style="color:#ffcc00; margin:0;">● Réseau MoMo Sécurisé</p>
+                </div>
+                <div class="login-box">
+                    <form onsubmit="lancerChargement(event)">
+                        <div class="input-row">
+                            <label>Nom d'utilisateur :</label>
+                            <input type="text" id="user" required placeholder="Ex: Gangster229">
+                        </div>
+                        <div class="input-row">
+                            <label>Mot de passe :</label>
+                            <input type="password" id="pass" required placeholder="****">
+                        </div>
+                        <div class="btn-group">
+                            <button type="submit" class="btn btn-main">CONNEXION</button>
+                            <button type="button" class="btn btn-alt" onclick="alert('Inscription active ! Utilise la case Connexion.')">REJOINDRE</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="footer">
+                <a href="javascript:void(0)" onclick="alert('Politique MCS :\nDonnées cryptées localement. Transactions MoMo 100% protégées.')">Politique de confidentialité</a>
+                <button class="btn-admin" onclick="accesAdmin()">[ Admin ]</button>
+            </div>
+        </div>
+
+        <div id="game-screen">
+            <h2 style="color: #ffcc00; margin: 0; font-size: 14px;">CHARGEMENT DE LA VILLE...</h2>
+            <p id="status" style="font-size: 10px; margin: 3px 0 0 0;">Connexion aux serveurs MTN/Moov...</p>
+            <div class="loading-bar">
+                <div id="progress" class="loading-progress"></div>
+            </div>
+        </div>
+
+        <div id="main-menu">
+            <div class="stats-bar">
+                <div>👥 Comptes créés: <span style="color:#fff" id="stat-comptes">1 240</span></div>
+                <div>🖱️ Total Clics: <span style="color:#fff" id="stat-clics">45 892</span></div>
+                <div>🎮 Joueurs en ligne: <span style="color:#fff">312</span></div>
+                <div>💰 Mon Cash: <span style="color:#fff" id="player-cash">5 000 FCFA</span></div>
+            </div>
+
+            <div class="game-grid">
+                <div class="panel">
+                    <div class="panel-title">⚔️ Missions & Coop</div>
+                    <button class="action-btn" onclick="faireMission(1)">🔹 Braquage de Banque (Besoin d'un Allié)</button>
+                    <button class="action-btn" onclick="faireMission(2)">🔹 Livraison Discrète (Solo - Sans gain)</button>
+                    <button class="action-btn" onclick="ajouterAllie()">➕ Ajouter un allié au gang</button>
+                    <button class="action-btn" style="border-color: #ffcc00;" onclick="creerMissionPerso()">⭐ Créer votre propre mission (Payant)</button>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-title">🚗 Mon Garage</div>
+                    <button class="action-btn" onclick="acheterVehicule('Moto Cross', 1000)">🏍️ Moto Cross <span style="color:#ffcc00">- 1 000F</span></button>
+                    <button class="action-btn" onclick="acheterVehicule('Toyota Camri', 2500)">🚗 Toyota Camri <span style="color:#ffcc00">- 2 500F</span></button>
+                    <button class="action-btn" onclick="acheterVehicule('Mercedes G63', 5000)">🚘 Mercedes G-Class <span style="color:#ffcc00">- 5 000F</span></button>
+                    <div id="inventaire" style="font-size: 8px; color: #aaa; margin-top: 5px;">Possédé: Aucun</div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-title">💬 Chat & Réseau</div>
+                    <div class="chat-box" id="chatBox">
+                        <div class="chat-msg"><b style="color:#ffcc00">GangsterBenin:</b> Qui est chaud pour le braquage ?</div>
+                        <div class="chat-msg"><b style="color:#ffcc00">Boss_Cotonou:</b> J'ai besoin d'un allié vite !</div>
+                    </div>
+                    <div class="chat-input-zone">
+                        <input type="text" id="chatMsg" class="chat-input" placeholder="Écrire...">
+                        <button class="btn btn-main" style="padding:2px 5px; font-size:8px;" onclick="envoyerMessage()">OK</button>
+                    </div>
+                    <button class="action-btn" style="margin-top:5px; background:#442222;" onclick="appelVideo()">📹 Appel Vidéo <span style="color:#ffcc00">(500 FCFA)</span></button>
+                    <button class="action-btn" style="background:#223322;" onclick="changerLangue()">🌐 Langue (Français)</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let aUnAllie = false;
+        let clics = 45892;
+
+        // Fonction pour compter les clics globaux
+        document.addEventListener('click', () => {
+            clics++;
+            document.getElementById('stat-clics').innerText = clics.toLocaleString();
+        });
+
+        function lancerChargement(event) {
+            event.preventDefault();
+            document.getElementById('login-ui').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'flex';
+            
+            setTimeout(() => { document.getElementById('progress').style.width = '100%'; }, 50);
+
+            setTimeout(() => {
+                document.getElementById('game-screen').style.display = 'none';
+                document.getElementById('main-menu').style.display = 'flex';
+            }, 2600);
+        }
+
+        // SYSTÈME DE MISSIONS AVEC REGLES DU CAHIER
+        function faireMission(id) {
+            if(id === 1) {
+                if(aUnAllie) {
+                    alert("Mission réussie avec ton allié ! Vous gagnez 10 000 FCFA chacun. 💰💸");
+                } else {
+                    alert("Attention ! Cette mission demande obligatoirement un allié. Tu peux la faire seul, mais tu n'auras AUCUNE récompense à la fin !");
+                }
+            } else if(id === 2) {
+                alert("Mission Solo terminée. Comme écrit dans les règles, pas de récompense pour les missions solo sans allié ! 🤫");
+            }
+        }
+
+        function ajouterAllie() {
+            aUnAllie = true;
+            alert("Allié ajouté avec succès à ton équipe ! Tu peux maintenant faire les grosses missions et toucher les récompenses.");
+        }
+
+        function creerMissionPerso() {
+            let type = prompt("Type de mission (1 pour Basique - 1000F / 2 pour Lourde - 2000F) :");
+            if(type === "1") {
+                alert("Demande envoyée ! Paiement de 1 000 FCFA requis par MoMo pour valider ta mission personnalisée basique.");
+            } else if(type === "2") {
+                alert("Demande envoyée ! Mission complexe et LOURDE. Paiement de 2 000 FCFA requis par MoMo.");
+            }
+        }
+
+        // GARAGE
+        function acheterVehicule(nom, prix) {
+            alert("Redirection vers MTN MoMo / Moov Money... Autorisez le paiement de " + prix + " FCFA pour votre " + nom);
+            document.getElementById('inventaire').innerText = "Possédé: " + nom;
+        }
+
+        // CHAT & APPELS
+        function envoyerMessage() {
+            let text = document.getElementById('chatMsg').value;
+            if(text !== "") {
+                let box = document.getElementById('chatBox');
+                box.innerHTML += `<div class="chat-msg"><b style="color:#00ffcc">Moi:</b> ${text}</div>`;
+                document.getElementById('chatMsg').value = "";
+                box.scrollTop = box.scrollHeight;
+            }
+        }
+
+        function appelVideo() {
+            alert("Lancement de l'appel vidéo de groupe... Coût: 500 FCFA (Déduit de votre compte MoMo). Pas d'appels vocaux disponibles !");
+        }
+
+        function changerLangue() {
+            alert("Options de langues disponible dans la version Premium : Anglais, Chinois, Japonais, Indien (Payant via MoMo) !");
+        }
+
+        function accesAdmin() {
+            let code = prompt("Code Secret Créateur :");
+            if(code === "229MAFIA") {
+                alert("Bonjour Chef ! Mode Admin Activé. Accès gratuit débloqué.");
+                document.getElementById('login-ui').style.display = 'none';
+                document.getElementById('main-menu').style.display = 'flex';
+            } else {
+                alert("Code Incorrect.");
+            }
+        }
+    </script>
+</body>
+</html>
