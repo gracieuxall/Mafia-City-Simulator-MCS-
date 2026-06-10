@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MCS - Mafia City Simulator</title>
+    <style>
+        body {
+            background: #0d0d0d;
+            color: #ffffff;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        /* Cadre du jeu universel (marche debout et couché) */
+        .game-container {
+            width: 100%;
+            max-width: 500px;
+            background: #171717;
+            border: 2px solid #ffcc00;
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.2);
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            color: #ffcc00;
+            font-size: 20px;
+            text-align: center;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Zone d'authentification */
+        .auth-box {
+            background: #222;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        .row { margin-bottom: 10px; }
+        label { display: block; font-size: 11px; color: #ffcc00; margin-bottom: 4px; }
+        input { width: 100%; padding: 8px; background: #2b2b2b; border: 1px solid #444; color: #fff; font-size: 14px; border-radius: 4px; box-sizing: border-box; }
+
+        .btn {
+            width: 100%;
+            padding: 10px;
+            background: #ffcc00;
+            color: #000;
+            border: none;
+            font-weight: bold;
+            font-size: 13px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .btn-sec { background: transparent; color: #ffcc00; border: 1px solid #ffcc00; margin-top: 8px; }
+
+        /* Écrans cachés au début */
+        #loader-screen, #main-game { display: none; }
+
+        /* Barre de chargement */
+        .progress-bar { width: 100%; height: 8px; background: #333; border-radius: 4px; margin-top: 10px; overflow: hidden; }
+        .progress-fill { width: 0%; height: 100%; background: #ffcc00; transition: 2s linear; }
+
+        /* TABLEAU DE BORD DU JEU */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            background: #222;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            margin-bottom: 10px;
+            border: 1px solid #333;
+        }
+        .stat-item { color: #ffcc00; font-weight: bold; }
+        .stat-item span { color: #fff; }
+
+        /* SECTIONS DU JEU */
+        .section-title {
+            font-size: 11px;
+            color: #ffcc00;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin: 8px 0 4px 0;
+            border-left: 2px solid #ffcc00;
+            padding-left: 5px;
+        }
+
+        .game-btn {
+            background: #262626;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 8px;
+            font-size: 11px;
+            border-radius: 4px;
+            text-align: left;
+            width: 100%;
+            margin-bottom: 4px;
+            cursor: pointer;
+        }
+        .game-btn:hover { border-color: #ffcc00; background: #2d2d2d; }
+
+        /* FIL D'ACTUALITÉ / CHAT */
+        .feed-box {
+            background: #0a0a0a;
+            border: 1px solid #333;
+            height: 70px;
+            overflow-y: auto;
+            padding: 5px;
+            font-size: 10px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+        }
+        .feed-msg { margin-bottom: 3px; line-height: 1.2; }
+
+        .chat-send-zone { display: flex; gap: 4px; }
+
+        /* PIED DE PAGE */
+        .footer {
+            margin-top: 12px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            border-top: 1px solid #222;
+            padding-top: 6px;
+        }
+        .footer a { color: #555; text-decoration: none; }
+        .admin-btn { background: none; border: none; color: #222; cursor: pointer; padding: 0; font-size: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        
+        <div id="auth-screen">
+            <h1>Mafia City Simulator</h1>
+            <div class="auth-box">
+                <form onsubmit="demarrerJeu(event)">
+                    <div class="row">
+                        <label>Nom d'utilisateur :</label>
+                        <input type="text" id="pseudo" required placeholder="Ex: Gangster229">
+                    </div>
+                    <div class="row">
+                        <label>Mot de passe :</label>
+                        <input type="password" required placeholder="••••">
+                    </div>
+                    <button type="submit" class="btn">Se connecter</button>
+                    <button type="button" class="btn btn-sec" onclick="alert('Inscription réussie ! Connecte-toi.')">Créer un compte</button>
+                </form>
+            </div>
+            <div class="footer">
+                <a href="javascript:void(0)" onclick="alert('Politique de confidentialité :\nVos données et transactions via MTN MoMo / Moov Money sont 100% sécurisées localement.')">Politique de confidentialité</a>
+                <button class="admin-btn" onclick="ouvrirAdmin()">[ Admin ]</button>
+            </div>
+        </div>
+
+        <div id="loader-screen" style="text-align: center; padding: 20px 0;">
+            <h3 style="color: #ffcc00; margin: 0 0 5px 0; font-size: 14px;">CHARGEMENT DE LA VILLE...</h3>
+            <div style="font-size: 11px; color: #aaa;" id="load-status">Vérification du compte...</div>
+            <div class="progress-bar"><div id="bar-fill" class="progress-fill"></div></div>
+        </div>
+
+        <div id="main-game">
+            <h1>Mon Empire</h1>
+            
+            <div class="stats-grid">
+                <div class="stat-item">💰 Cash: <span id="cash-val">5 000</span> F</div>
+                <div class="stat-item">👥 Allié: <span id="allie-val">Aucun</span></div>
+                <div class="stat-item">🚗 Garage: <span id="garage-val">À pied</span></div>
+                <div class="stat-item">📈 Clics: <span id="clics-val">45 892</span></div>
+            </div>
+
+            <div class="section-title">⚔️ Missions Disponibles</div>
+            <button class="game-btn" onclick="lancerMission(1)">💰 Braquage MoMo (Obligation d'allié : +3 000F)</button>
+            <button class="game-btn" onclick="lancerMission(2)">📦 Livraison rapide (Solo : +500F)</button>
+            <button class="game-btn" style="color: #ffcc00;" onclick="recruterGangster()">👥 Ajouter un Allié au gang (Gratuit)</button>
+            <button class="game-btn" style="border-color: #ffcc00;" onclick="creerMaMission()">⭐ Créer votre propre mission (MoMo)</button>
+
+            <div class="section-title">🏍️ Concessionnaire de Luxe</div>
+            <button class="game-btn" onclick="acheterVehicule(1000, 'Moto Cross 🏍️')">🏍️ Moto Cross <span style="color:#ffcc00">- 1 000F</span></button>
+            <button class="game-btn" onclick="acheterVehicule(2500, 'Toyota Camry 🚗')">🚗 Toyota Camry <span style="color:#ffcc00">- 2 500F</span></button>
+            <button class="game-btn" onclick="acheterVehicule(5000, 'Mercedes G63 🚘')">🚘 Mercedes G63 <span style="color:#ffcc00">- 5 000F</span></button>
+
+            <div class="section-title">💬 Chat Global & Actions</div>
+            <div class="feed-box" id="feed-container">
+                <div class="feed-msg"><b style="color:#ffcc00">[Système]:</b> Serveur Bénin en ligne.</div>
+                <div class="feed-msg"><b style="color:#ffcc00">Boss_Parakou:</b> Quelqu'un pour faire une mission coop ?</div>
+            </div>
+            <div class="chat-send-zone">
+                <input type="text" id="chat-text" style="padding: 5px; font-size: 11px;" placeholder="Écrire un message...">
+                <button class="btn" style="width: auto; padding: 0 10px; font-size: 11px;" onclick="posterMessage()">OK</button>
+            </div>
+            <button class="game-btn" style="background: #3a1a1a; margin-top: 6px; text-align: center;" onclick="declencherVideo()">📹 Lancer un Appel Vidéo de groupe (500 FCFA)</button>
+            <button class="game-btn" style="background: #1a2a1a; text-align: center;" onclick="changerDeLangue()">🌐 Langue : Français (Modifier)</button>
+        </div>
+
+    </div>
+
+    <script>
+        // Variables réelles du jeu
+        let argent = 5000;
+        let possedeAllie = false;
+        let compteurClics = 45892;
+
+        // Écouteur pour compter chaque clic dans le jeu
+        document.addEventListener('click', () => {
+            compteurClics++;
+            document.getElementById('clics-val').innerText = compteurClics;
+        });
+
+        function demarrerJeu(e) {
+            e.preventDefault();
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('loader-screen').style.display = 'block';
+            
+            setTimeout(() => { document.getElementById('bar-fill').style.width = '100%'; }, 50);
+            setTimeout(() => { document.getElementById('load-status').innerText = "Chargement des véhicules..."; }, 1000);
+
+            setTimeout(() => {
+                document.getElementById('loader-screen').style.display = 'none';
+                document.getElementById('main-game').style.display = 'block';
+                ajouterAuFil("<b style='color:#00ffcc'>[Système]:</b> Connexion réussie. Bienvenue Boss !");
+            }, 2100);
+        }
+
+        function ajouterAuFil(texte) {
+            let conteneur = document.getElementById('feed-container');
+            conteneur.innerHTML += `<div class="feed-msg">${texte}</div>`;
+            conteneur.scrollTop = conteneur.scrollHeight;
+        }
+
+        // REGLES DES MISSIONS DU CAHIER
+        function lancerMission(type) {
+            if (type === 1) {
+                if (possedeAllie) {
+                    argent += 3000;
+                    document.getElementById('cash-val').innerText = argent;
+                    ajouterAuFil("⚔️ <b>Braquage MoMo réussi !</b> Gain : <span style='color:#0f0'>+3 000F</span>");
+                } else {
+                    ajouterAuFil("❌ <b>Échec Mission :</b> Tu n'as pas d'allié. Gain : 0F.");
+                    alert("Règle de ton cahier : Cette mission oblige à avoir un allié. Sans allié, tu gagnes 0 FCFA ! Recrute un membre d'abord.");
+                }
+            } else if (type === 2) {
+                argent += 500;
+                document.getElementById('cash-val').innerText = argent;
+                ajouterAuFil("📦 <b>Livraison solo effectuée.</b> Gain : <span style='color:#0f0'>+500F</span>");
+            }
+        }
+
+        function recruterGangster() {
+            possedeAllie = true;
+            document.getElementById('allie-val').innerText = "Prêt (1)";
+            ajouterAuFil("👥 <b>Allié recruté !</b> Les missions de braquage sont débloquées.");
+        }
+
+        function creerMaMission() {
+            let titre = prompt("Nom de votre mission personnalisée :");
+            if(titre) {
+                let choix = prompt("Choisir le niveau :\n1 - Mission Basique (1 000F)\n2 - Mission LOURDE (2 000F)");
+                if (choix === "1") {
+                    ajouterAuFil(`⭐ Nouvelle mission bénévole ajoutée : [${titre}] (Coût : 1 000F via MoMo)`);
+                } else if (choix === "2") {
+                    ajouterAuFil(`🔥 Nouvelle mission LOURDE ajoutée : [${titre}] (Coût : 2 000F via MoMo)`);
+                }
+            }
+        }
+
+        // ACHAT RÉEL DANS LE GARAGE
+        function acheterVehicule(prix, nom) {
+            if (argent >= prix) {
+                argent -= prix;
+                document.getElementById('cash-val').innerText = argent;
+                document.getElementById('garage-val').innerText = nom;
+                ajouterAuFil(`🛒 Véhicule acheté : <b>${nom}</b>. Déduit : -${prix}F`);
+            } else {
+                alert("Erreur MoMo : Solde insuffisant dans le jeu ! Fais des missions pour gagner de l'argent.");
+            }
+        }
+
+        // DISCUSSION CHAT
+        function posterMessage() {
+            let champ = document.getElementById('chat-text');
+            if (champ.value !== "") {
+                ajouterAuFil(`<b style='color:#fff'>Moi:</b> ${champ.value}`);
+                champ.value = "";
+            }
+        }
+
+        function declencherVideo() {
+            alert("Lancement de l'appel vidéo... Coût : 500 FCFA MoMo. (Note : Les appels vocaux seuls sont indisponibles).");
+            ajouterAuFil("📹 <i>Appel vidéo de groupe lancé (Facturé 500F)</i>");
+        }
+
+        function changerDeLangue() {
+            alert("Langues de ton cahier : Anglais, Chinois, Japonais, Indien.\nStatut : Version payante requise par MoMo pour débloquer ces langues !");
+        }
+
+        // TON BOUTON ADMIN DE TRICHE SECRET 🕵️‍♂️
+        function ouvrirAdmin() {
+            let pass = prompt("Entrez le code secret Admin :");
+            if (pass === "229MAFIA") {
+                argent = 999999;
+                document.getElementById('cash-val').innerText = argent;
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('main-game').style.display = 'block';
+                alert("Code valide Chef ! Vous êtes admin : Cash au maximum ! 👑");
+                ajouterAuFil("👑 <b>Mode Admin Activé : Cash Infini !</b>");
+            } else {
+                alert("Code incorrect !");
+            }
+        }
+    </script>
+</body>
+</html>
